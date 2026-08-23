@@ -9,7 +9,8 @@ const router = Router();
 // Rate limiting for file uploads
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: process.env.NODE_ENV === 'test' ? 100 : 20, 
+  max: 20, 
+  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
   message: {
     status: 'error',
     message: 'Too many upload attempts, please try again later'

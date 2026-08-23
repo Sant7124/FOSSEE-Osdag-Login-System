@@ -8,11 +8,12 @@ const router = Router();
 // Registration Rate Limiter: Prevent obvious automated abuse
 // 5 accounts per hour per IP is very reasonable for typical usage
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, 
-  max: process.env.NODE_ENV === 'test' ? 100 : 5, 
+  windowMs: 15 * 60 * 1000, 
+  max: 5, 
+  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
   message: {
     status: 'error',
-    message: 'Too many accounts created from this IP, please try again after an hour'
+    message: 'Too many accounts created from this IP, please try again after 15 minutes'
   }
 });
 
@@ -20,7 +21,8 @@ const registerLimiter = rateLimit({
 // 10 attempts per 15 minutes is reasonable for typical usage
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: process.env.NODE_ENV === 'test' ? 100 : 10, 
+  max: 10, 
+  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
   message: {
     status: 'error',
     message: 'Too many login attempts, please try again after 15 minutes'

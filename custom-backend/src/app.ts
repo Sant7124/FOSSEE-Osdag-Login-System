@@ -22,7 +22,8 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  skip: () => process.env.NODE_ENV === 'test'
 });
 app.use(limiter);
 
@@ -36,6 +37,14 @@ app.use('/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/me', userRoutes);
 app.use('/api/files', fileRoutes);
+
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Cannot ${req.method} ${req.originalUrl}`
+  });
+});
 
 // Error Handling
 app.use(errorHandler);
