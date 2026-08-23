@@ -71,7 +71,7 @@ describe('Dashboard and Files', () => {
             status: 'success',
             data: {
               files: [
-                { id: '1', original_name: 'test.pdf', mime_type: 'application/pdf', size_bytes: 1024, created_at: new Date().toISOString() }
+                { id: '1', originalName: 'test.pdf', mimeType: 'application/pdf', size: 1024, createdAt: new Date().toISOString() }
               ]
             }
           }
