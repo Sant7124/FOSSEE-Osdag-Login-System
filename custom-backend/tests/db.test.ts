@@ -46,6 +46,7 @@ describe('Database Foundation Tests', () => {
     expect(columns).toContain('id');
     expect(columns).toContain('user_id');
     expect(columns).toContain('expires_at');
+    expect(columns).toContain('token_hash');
   });
 
   test('Files table exists and checks file size constraint', async () => {
