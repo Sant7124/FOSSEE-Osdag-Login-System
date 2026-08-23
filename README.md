@@ -1,62 +1,87 @@
 # FOSSEE Autumn 2026 Osdag Login System
 
-This project is the custom backend implementation for the FOSSEE Osdag screening task: **"Secure Login System with User Details & File Access"**.
+This project is the complete, full-stack implementation for the FOSSEE Osdag screening task: **"Secure Login System with User Details & File Access"**.
 
 ## Architecture Overview
-The project is built around a dual-implementation model:
-1. **Implementation A (Custom Backend)**: Node.js, Express, PostgreSQL, robust security measures, and local file storage. (Currently active)
-2. **Implementation B (Managed Backend)**: Appwrite stack. (Upcoming)
+The project is built around a secure client-server architecture:
+- **Client (Frontend):** A Single-Page Application (SPA) built with React, Vite, and TypeScript.
+- **Server (Backend):** A hardened Node.js/Express API handling all authentication, authorization, and business logic.
+- **Database (Supabase):** PostgreSQL used exclusively as a relational database (no BaaS features used).
+- **Storage (Appwrite):** Appwrite Storage used for scalable cloud file hosting.
 
-This repository strictly houses Implementation A as per the phase constraints. 
-The custom backend operates entirely on its own authorization constraints, database, and infrastructure. No ORMs (e.g., Prisma, TypeORM) are utilized; raw SQL is dispatched through `pg` to maximize transparency and SQL competence.
+The backend acts as an absolute security boundary. The frontend contains zero secrets, cannot bypass authorization, and relies entirely on HttpOnly cookies for authentication.
 
-## Database & Authentication
-- **Database**: PostgreSQL (hosted on Supabase, purely as a standard PG cluster).
-- **Authentication**: Stateful server-side sessions bound to 32-byte cryptographically secure UUID tokens hashed via SHA-256 for persistent database lookup.
-- **Passwords**: Hashed with `bcrypt` (cost 12).
-- **Security**: No JWTs. Sessions are revokable on logout, protecting against replay attacks or compromised token storage.
+## Authentication & Security
+- **Authentication:** Stateful server-side sessions bound to 32-byte cryptographically secure UUID tokens hashed via SHA-256 for persistent database lookup.
+- **Cookies:** Sessions are maintained via `HttpOnly`, `Secure`, `SameSite=Lax` cookies. The browser JavaScript has no access to the session token.
+- **Passwords:** Hashed with `bcrypt` (cost 12).
+- **Logout:** Sessions are explicitly revoked in the database on logout, protecting against replay attacks or compromised token storage.
 
 ## User & File System Isolation
-- **User Identity**: The endpoint `/api/me` absolutely isolates users via their HTTP-only session cookie. Arbitrary user queries are strictly prohibited.
-- **Secure File Storage**: Files are localized under `uploads/users/:userId/:storedName`. Path traversal is defended by strict validation logic.
-- **Ownership**: The backend utilizes strict relational `WHERE file_id = $1 AND user_id = $2` clauses for file operations. Cross-user access fundamentally triggers a generic `404 Not Found` to prevent timing or enumeration attacks.
-
-## Security Audit
-The latest phase (Phase 7) concluded a comprehensive security hardening audit:
-- Graceful shutdown handles orphaned Node server and PG connection pools effectively.
-- Express-rate-limit defends against brute forcing and abuse.
-- `helmet` controls strict HTTP security headers (CSP, X-Frame-Options, DNS Prefetch).
-- Inputs are rigorously typed via `zod`.
-- Error outputs purposefully scrub stack traces, SQL syntax, or filesystem paths.
-- Global request payloads capped at 10kb; Multipart uploads capped at 5MB.
-
-## Testing Strategy
-- Utilizes `jest` and `supertest`.
-- Extensive coverage across Auth API, File isolation, Database validation, and security exploitation attempts (e.g., header spoofing, path manipulation).
-- Test environment dynamically scopes rate limiters and pool configurations to maximize concurrency safety on free-tier DB constraints.
+- **User Identity:** The endpoint `/api/me` absolutely isolates users via their HTTP-only session cookie. Arbitrary user queries are strictly prohibited. The frontend uses this to determine authentication state (`AuthContext`).
+- **Secure File Storage:** Files are uploaded to Appwrite Storage through the backend. The backend maps Appwrite `fileId`s to authenticated users in PostgreSQL.
+- **Ownership:** The backend utilizes strict relational `WHERE file_id = $1 AND user_id = $2` clauses for file operations. Cross-user access fundamentally triggers a generic `404 Not Found` to prevent enumeration attacks.
+- **Appwrite Security:** Appwrite API keys and Project IDs are maintained exclusively on the backend. The frontend never talks to Appwrite directly.
 
 ## Setup Instructions
 
-### Environment Variables
-Create a `.env` in `custom-backend/`:
+### 1. Environment Configuration
+
+**Backend (`custom-backend/.env`):**
 ```env
-PORT=3000
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.erhwgelmgtpgpeztyizf.supabase.co:5432/postgres
+PORT=5050
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 SESSION_SECRET=[Secure_32_Byte_Secret]
 CORS_ORIGIN=http://localhost:5173
-UPLOAD_DIR=uploads
+NODE_ENV=development
+
+# Appwrite Storage Credentials
+APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=[YOUR_PROJECT_ID]
+APPWRITE_API_KEY=[YOUR_API_KEY]
+APPWRITE_BUCKET_ID=[YOUR_BUCKET_ID]
 ```
 
-### Running the API
+**Frontend (`client/.env`):**
+No secrets are required. Vite is configured to automatically proxy `/api` requests to `http://localhost:5050` during development.
+
+### 2. Backend Setup
 ```bash
 cd custom-backend
 npm install
-npm run dev
+npm run db:migrate  # Run database migrations
+npm run dev         # Start the API server on port 5050
 ```
 
-### Testing the API
+### 3. Frontend Setup
+```bash
+cd client
+npm install
+npm run dev         # Start the Vite dev server on port 5173
+```
+Access the application at `http://localhost:5173`.
+
+### 4. Testing Commands
+
+**Frontend Tests (Vitest & React Testing Library):**
+```bash
+cd client
+npm test
+```
+*(Executes UI component validation, authentication flow tests, and mock API assertions)*
+
+**Backend Tests (Jest & Supertest):**
 ```bash
 cd custom-backend
 npm test
 ```
-*(Executes isolated database integrations, authentication audits, and cross-user exploitation workflows)*
+*(Executes isolated database integrations, authentication audits, storage integration tests, and cross-user exploitation workflows)*
+
+## Production Build
+
+To build the frontend for production:
+```bash
+cd client
+npm run build
+```
+This produces an optimized, static bundle in the `client/dist` directory which can be served by any static hosting provider or Express static middleware.
