@@ -10,7 +10,12 @@ const router = Router();
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 5, 
-  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
+  keyGenerator: (req) => {
+    if (process.env.NODE_ENV === 'test') {
+      return req.headers['x-test-ip'] ? (req.headers['x-test-ip'] as string) : `test-${Math.random()}`;
+    }
+    return req.ip || 'unknown';
+  },
   message: {
     status: 'error',
     message: 'Too many accounts created from this IP, please try again after 15 minutes'
@@ -22,7 +27,12 @@ const registerLimiter = rateLimit({
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 10, 
-  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
+  keyGenerator: (req) => {
+    if (process.env.NODE_ENV === 'test') {
+      return req.headers['x-test-ip'] ? (req.headers['x-test-ip'] as string) : `test-${Math.random()}`;
+    }
+    return req.ip || 'unknown';
+  },
   message: {
     status: 'error',
     message: 'Too many login attempts, please try again after 15 minutes'

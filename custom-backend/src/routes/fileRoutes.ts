@@ -10,7 +10,12 @@ const router = Router();
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 20, 
-  skip: () => process.env.NODE_ENV === 'test', // Explicitly isolate tests from global rate limits
+  keyGenerator: (req) => {
+    if (process.env.NODE_ENV === 'test') {
+      return req.headers['x-test-ip'] ? (req.headers['x-test-ip'] as string) : `test-${Math.random()}`;
+    }
+    return req.ip || 'unknown';
+  },
   message: {
     status: 'error',
     message: 'Too many upload attempts, please try again later'
