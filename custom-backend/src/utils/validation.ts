@@ -18,3 +18,16 @@ export const registerSchema = z.object({
 }).strict(); // strict() ensures no extra malicious fields are accepted
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const loginSchema = z.object({
+  email: z.string()
+    .trim()
+    .email('Invalid email address')
+    .transform((val) => val.toLowerCase()),
+  password: z.string()
+    .min(1, 'Password is required')
+    // We restrict max length on login to prevent intentional CPU starvation via massive bcrypt hashes
+    .max(100, 'Password is too long'),
+}).strict();
+
+export type LoginInput = z.infer<typeof loginSchema>;
