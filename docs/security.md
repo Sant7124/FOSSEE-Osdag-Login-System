@@ -31,3 +31,9 @@ A user must only be able to access files and profile information that belong dir
 - **Authentication vs Identity**: Authentication proves "who are you" via session. The endpoint `/api/me` strictly fetches information corresponding to the authenticated identity.
 - **Zero Trust**: Client-supplied user identifiers (like `req.body.userId`, query parameters, or fake custom headers) are inherently untrusted and explicitly ignored.
 - **Absolute Isolation**: Authenticated User A can NEVER select or query User B's profile via `/api/me` because the query strictly enforces `WHERE id = $1`, where `$1` is guaranteed to be `req.user.id` from the secure session context.
+
+## File System Security
+- **Secure Local Storage**: Files are stored in a dedicated `uploads/` directory that is strictly kept out of public express static routing.
+- **File Metadata & Identity**: File IDs alone are never sufficient for authorization. The core rule for all file access (Read/Delete) is `WHERE id = $1 AND user_id = $2`, absolutely guaranteeing that no user can access another's file. 404 is returned instead of 403 to prevent enumeration.
+- **Path Traversal Protection**: Original filenames are discarded for physical storage. A cryptographically random UUID is used instead (`stored_name`). Safe paths are generated using `path.resolve` and strict prefix validation is applied to prevent any directory escapes.
+- **MIME & Size Validation**: Files are heavily validated in memory using Multer before being written. Max size is 5MB, and only a conservative whitelist of MIME types is allowed.
