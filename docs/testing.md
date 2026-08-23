@@ -7,9 +7,11 @@ Tests must verify real behavior, not mock the underlying fundamental logic.
 The test suite will cover the following scenarios:
 - **Health**: \GET /health\ responds with 200 OK.
 - **Authentication**:
-  - Valid login creates session and returns cookie.
-  - Invalid login returns 401.
-  - Logout clears session.
+  - Valid login creates session, hashes token, sets HTTP-only cookie, and returns safe user JSON.
+  - Invalid login (wrong password or unknown email) returns identical 401 response.
+  - Multiple sessions successfully supported independently.
+  - Logout sets `revoked_at` in DB and clears cookie. Reusing the old cookie actively fails.
+  - Expired, non-existent, or revoked sessions result in immediate rejection by authMiddleware.
 - **Registration**:
   - Valid registration creates user, returns safe response without password hash.
   - Duplicate registration (same email or different casing) returns 409 safely.
