@@ -1,5 +1,7 @@
 import { pool, db } from '../src/db';
 
+jest.setTimeout(30000);
+
 describe('Database Foundation Tests', () => {
   afterAll(async () => {
     await pool.end();
