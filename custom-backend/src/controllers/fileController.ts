@@ -50,6 +50,12 @@ export const downloadFile = async (req: Request, res: Response, next: NextFuncti
 
     const fileId = req.params.id;
     
+    // Validate UUID format before DB hit
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(fileId)) {
+      throw new AppError('Invalid file ID format', 400);
+    }
+
     // Securely retrieve metadata ensuring exact ownership
     const file = await fileService.getUserFileMetadata(fileId, userId);
 
@@ -87,6 +93,12 @@ export const deleteFile = async (req: Request, res: Response, next: NextFunction
     if (!userId) throw new AppError('Unauthorized', 401);
 
     const fileId = req.params.id;
+
+    // Validate UUID format before DB hit
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(fileId)) {
+      throw new AppError('Invalid file ID format', 400);
+    }
 
     // Securely delete
     await fileService.deleteUserFile(fileId, userId);

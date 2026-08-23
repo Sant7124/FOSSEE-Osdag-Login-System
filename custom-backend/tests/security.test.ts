@@ -130,8 +130,8 @@ describe('Full Security & Authorization Audit Tests', () => {
         .get(`/api/files/12345678-1234-1234-1234-123456789012' OR '1'='1`)
         .set('Cookie', users.Alice.cookie);
       
-      // Should fail safely (pg handles parameterization so it just looks for a literal match which doesn't exist, or fails UUID cast)
-      expect(fileRes.status).toBe(500); // Invalid UUID format throws a db error which translates to 500
+      // Should fail safely with 400 Bad Request because of our UUID validator
+      expect(fileRes.status).toBe(400);
     });
   });
 
