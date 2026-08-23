@@ -10,6 +10,12 @@ The test suite will cover the following scenarios:
   - Valid login creates session and returns cookie.
   - Invalid login returns 401.
   - Logout clears session.
+- **Registration**:
+  - Valid registration creates user, returns safe response without password hash.
+  - Duplicate registration (same email or different casing) returns 409 safely.
+  - Missing or weak parameters rejected with 400.
+  - SQL injection payloads sanitized and treated literally.
+  - Extra unapproved fields strictly rejected by Zod validation.
 - **Authorization & Isolation**:
   - Unauthenticated access to protected routes returns 401.
   - Authenticated user attempting to access another user's file returns 403 Forbidden.
