@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler';
 import healthRoutes from './routes/healthRoutes';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
+import fileRoutes from './routes/fileRoutes';
 
 const app = express();
 
@@ -34,7 +35,7 @@ app.use(cookieParser());
 app.use('/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/me', userRoutes);
-// app.use('/api/files', fileRoutes);
+app.use('/api/files', fileRoutes);
 
 // Error Handling
 app.use(errorHandler);
