@@ -17,4 +17,12 @@ A user must only be able to access files and profile information that belong dir
 
 ## Denial of Service Protection
 - Basic rate limiting is applied globally via express-rate-limit.
+- Registration and Login have dedicated rate limiters to prevent brute force and abuse.
 - File uploads are capped at a strict maximum file size (5MB).
+
+## Authentication & Sessions
+- **No JWT**: We intentionally use Server-Side Sessions instead of JWTs to enable instantaneous revocation and absolute server-side control over active sessions.
+- **Session Tokens**: Sessions are tracked via a cryptographically secure 32-byte opaque token. The raw token is sent to the client, while a SHA-256 hash of the token is stored in the database (`token_hash`). This prevents database leaks from immediately exposing active sessions.
+- **Cookie Security**: The session token is transmitted exclusively via an `HttpOnly`, `SameSite=Lax` secure cookie. It is never exposed to frontend JavaScript.
+- **Expiration and Revocation**: Sessions have an absolute hard expiry (7 days) in `expires_at`. Logout explicitly sets `revoked_at`, guaranteeing the session is permanently dead even if the cookie is intercepted.
+- **Account Enumeration**: Login failures (wrong password vs unknown email) return the exact same generic error message (`Invalid email or password`) to prevent enumeration attacks.
