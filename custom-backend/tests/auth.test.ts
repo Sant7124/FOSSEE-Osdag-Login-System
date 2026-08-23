@@ -53,7 +53,8 @@ describe('Authentication API Tests', () => {
     expect(cookies).toBeDefined();
     
     // Find the session cookie
-    const sessionCookie = cookies.find((c: string) => c.startsWith('session='));
+    const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+    const sessionCookie = cookieArray.find((c: string) => c.startsWith('session='));
     expect(sessionCookie).toBeDefined();
     expect(sessionCookie).toContain('HttpOnly');
     
@@ -123,7 +124,8 @@ describe('Authentication API Tests', () => {
     expect(logoutRes.status).toBe(200);
     
     // Cookie cleared
-    const clearCookie = logoutRes.headers['set-cookie'].find((c: string) => c.startsWith('session=;'));
+    const cookiesArray = Array.isArray(logoutRes.headers['set-cookie']) ? logoutRes.headers['set-cookie'] : [logoutRes.headers['set-cookie']];
+    const clearCookie = cookiesArray.find((c: string) => c.startsWith('session=;'));
     expect(clearCookie).toBeDefined();
 
     // 2. Reuse old cookie - must be rejected!
@@ -137,12 +139,16 @@ describe('Authentication API Tests', () => {
 
   test('Multiple sessions work independently', async () => {
     // Login session A
-    const resA = await request(app).post('/api/auth/login').send(user);
-    const cookieA = resA.headers['set-cookie'].find((c: string) => c.startsWith('session=')).split(';')[0];
+    const resA = await request(app).post('/api/auth/login').send({ email: user.email, password: user.password });
+    expect(resA.status).toBe(200);
+    const cookiesA = Array.isArray(resA.headers['set-cookie']) ? resA.headers['set-cookie'] : [resA.headers['set-cookie']];
+    const cookieA = cookiesA.find((c: string) => c && c.startsWith('session=')).split(';')[0];
     
     // Login session B
-    const resB = await request(app).post('/api/auth/login').send(user);
-    const cookieB = resB.headers['set-cookie'].find((c: string) => c.startsWith('session=')).split(';')[0];
+    const resB = await request(app).post('/api/auth/login').send({ email: user.email, password: user.password });
+    expect(resB.status).toBe(200);
+    const cookiesB = Array.isArray(resB.headers['set-cookie']) ? resB.headers['set-cookie'] : [resB.headers['set-cookie']];
+    const cookieB = cookiesB.find((c: string) => c && c.startsWith('session=')).split(';')[0];
 
     // Both work initially
     await request(app).get('/api/auth/test-protected').set('Cookie', cookieA).expect(200);
