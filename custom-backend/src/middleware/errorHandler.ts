@@ -14,6 +14,10 @@ export const errorHandler = (
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
+  } else if ('type' in err && err.type === 'entity.parse.failed') {
+    // Catch Express JSON parse errors explicitly
+    statusCode = 400;
+    message = 'Invalid JSON payload';
   }
 
   // Do not leak stack traces in production
