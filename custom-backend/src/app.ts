@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import healthRoutes from './routes/healthRoutes';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 
@@ -24,13 +25,13 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Parsing Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' })); // Prevent large JSON payloads
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
 // Routes
 app.use('/health', healthRoutes);
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 // app.use('/api/me', userRoutes);
 // app.use('/api/files', fileRoutes);
 
