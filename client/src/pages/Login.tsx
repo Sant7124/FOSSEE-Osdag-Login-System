@@ -39,6 +39,18 @@ const Login = () => {
 
   return (
     <div className="auth-container">
+      <div className="auth-branding">
+        <h1>Osdag Secure Vault</h1>
+        <p>
+          Experience enterprise-grade file storage with military-grade encryption. 
+          Your sensitive documents are protected by the industry's highest security standards.
+        </p>
+        <div className="auth-features">
+          <span>✨ End-to-End Encryption</span>
+          <span>🔒 Advanced Secure Sessions</span>
+          <span>🛡️ Strict Role-Based Isolation</span>
+        </div>
+      </div>
       <div className="auth-card">
         <h1>Welcome Back</h1>
         <p className="subtitle">Securely log into your account</p>

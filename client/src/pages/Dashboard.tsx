@@ -142,6 +142,22 @@ const Dashboard = () => {
       {error && <div className="alert error">{error}</div>}
 
       <div className="dashboard-content">
+        {/* Premium Stats Overview */}
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <h4>Total Storage Used</h4>
+            <p>{formatSize(files.reduce((acc, file) => acc + Number(file.size), 0))}</p>
+          </div>
+          <div className="stat-card">
+            <h4>Files Secured</h4>
+            <p>{files.length}</p>
+          </div>
+          <div className="stat-card">
+            <h4>Security Status</h4>
+            <p className="status-secure">✓ End-to-End Encrypted</p>
+          </div>
+        </div>
+
         {/* Upload Section */}
         <div className="panel">
           <div className="panel-header">
