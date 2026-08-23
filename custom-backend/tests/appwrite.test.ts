@@ -22,6 +22,17 @@ describe('Appwrite Storage Integration', () => {
   const mimeType = 'text/plain';
   const originalName = 'appwrite-test.txt';
 
+  afterAll(async () => {
+    // Cleanup any orphaned files if tests fail before deletion
+    if (testAppwriteFileId) {
+      try {
+        await provider.deleteFile(testAppwriteFileId);
+      } catch (e) {
+        // Ignore errors during cleanup, file might already be deleted
+      }
+    }
+  });
+
   test('Upload file to Appwrite', async () => {
     testAppwriteFileId = await provider.uploadFile(
       testUserId,
