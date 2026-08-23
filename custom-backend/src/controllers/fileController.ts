@@ -3,6 +3,7 @@ import * as fileService from '../services/fileService';
 import { AppError } from '../utils/AppError';
 import fs from 'fs'; // For streaming streams
 import path from 'path';
+import { getStorageProvider } from '../integrations/storage';
 
 export const uploadFile = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -68,20 +69,11 @@ export const downloadFile = async (req: Request, res: Response, next: NextFuncti
     res.setHeader('Content-Type', file.mime_type);
     res.setHeader('Content-Length', file.size.toString());
 
-    // Stream the physical file rather than loading the entire file into memory
-    const fileStream = fs.createReadStream(file.storage_path);
-    
-    fileStream.on('error', (err) => {
-      console.error('File Stream Error:', err);
-      // Stream errors are hard to recover to JSON cleanly if headers are sent.
-      if (!res.headersSent) {
-        next(new AppError('Error reading file', 500));
-      } else {
-        res.end();
-      }
-    });
+    const provider = getStorageProvider();
+    const providerFileId = file.appwrite_file_id || file.storage_path;
 
-    fileStream.pipe(res);
+    // Delegate streaming to the active storage provider
+    await provider.downloadFile(providerFileId, res);
   } catch (error) {
     next(error);
   }
