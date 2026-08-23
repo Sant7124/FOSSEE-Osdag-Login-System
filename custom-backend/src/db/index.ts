@@ -12,9 +12,9 @@ export const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  max: process.env.NODE_ENV === 'test' ? 2 : 10,
+  max: process.env.NODE_ENV === 'test' ? 5 : 10,
   idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 1000 : 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: process.env.NODE_ENV === 'test' ? 10000 : 5000,
 });
 
 pool.on('error', (err) => {
