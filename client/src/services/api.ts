@@ -6,9 +6,6 @@ import axios from 'axios';
 export const api = axios.create({
   baseURL: '/api',
   withCredentials: true, // Crucial: ensures HttpOnly cookies are sent with every request
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor (Optional, for logging or modifying requests)
