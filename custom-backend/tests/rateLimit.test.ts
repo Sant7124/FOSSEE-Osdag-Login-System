@@ -7,6 +7,11 @@ describe('Rate Limiter Tests', () => {
   // Use a unique IP for these tests to isolate them from other test suites that might run in parallel or sequence
   const testIp = `127.0.0.1-${Date.now()}`;
 
+  afterAll(async () => {
+    const { pool } = require('../src/db');
+    await pool.end();
+  });
+
   describe('Global Rate Limiter', () => {
     test('Requests below limit succeed', async () => {
       // 100 requests per 15 minutes is the limit. Let's make 5 requests.
