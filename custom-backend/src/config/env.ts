@@ -17,5 +17,11 @@ export const config = {
   file: {
     uploadDir: process.env.UPLOAD_DIR || 'uploads',
     maxSize: parseInt(process.env.MAX_FILE_SIZE || '5242880', 10),
+  },
+  appwrite: {
+    endpoint: process.env.APPWRITE_ENDPOINT,
+    projectId: process.env.APPWRITE_PROJECT_ID,
+    apiKey: process.env.APPWRITE_API_KEY,
+    bucketId: process.env.APPWRITE_BUCKET_ID || 'default-bucket',
   }
 };
