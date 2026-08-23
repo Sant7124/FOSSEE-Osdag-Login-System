@@ -1,38 +1,51 @@
 import { db } from '../db';
 import { AppError } from '../utils/AppError';
-import { resolveUserStoragePath, generateSafeStoredName } from '../utils/fileStorage';
-import fs from 'fs/promises';
+import { getStorageProvider } from '../integrations/storage';
+import crypto from 'crypto';
 
 export const uploadFile = async (userId: string, originalName: string, mimeType: string, size: number, buffer: Buffer) => {
-  // 1. Generate secure storage name
-  const storedName = generateSafeStoredName();
+  const fileId = crypto.randomUUID();
+  const provider = getStorageProvider();
+
+  let providerFileId: string;
   
-  // 2. Resolve safe path
-  const storagePath = await resolveUserStoragePath(userId, storedName);
+  try {
+    // 1. Upload to storage provider FIRST
+    providerFileId = await provider.uploadFile(userId, fileId, buffer, mimeType, originalName);
+  } catch (error: any) {
+    console.error('Storage Provider Upload Error:', error);
+    throw new AppError('Failed to upload file to storage', 500);
+  }
 
   try {
-    // 3. Write physical file securely
-    await fs.writeFile(storagePath, buffer);
-
-    // 4. Insert DB record
+    // 2. Insert DB record mapping to the provider's file ID
     const result = await db.query(
-      `INSERT INTO files (user_id, original_name, stored_name, mime_type, size, storage_path)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size, storage_path, appwrite_file_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, original_name as "originalName", mime_type as "mimeType", size, created_at as "createdAt"`,
-      [userId, originalName, storedName, mimeType, size, storagePath]
+      [
+        fileId,
+        userId,
+        originalName,
+        `${fileId}.bin`, // Legacy stored_name for local storage backwards compatibility
+        mimeType,
+        size,
+        providerFileId, // Legacy storage_path (reused for LocalStorageProvider absolute path)
+        providerFileId  // New appwrite_file_id (if Appwrite is active, this is the Appwrite object ID)
+      ]
     );
 
     return result.rows[0];
   } catch (error) {
-    // 5. DB Cleanup on Failure: If inserting to DB fails, we must physically remove the file
+    // 3. DB Cleanup on Failure: If DB fails, we MUST physically remove the orphaned file from storage
     try {
-      await fs.unlink(storagePath);
+      await provider.deleteFile(providerFileId);
     } catch (cleanupError) {
-      console.error(`Failed to cleanup orphaned physical file: ${storagePath}`, cleanupError);
+      console.error(`Failed to cleanup orphaned storage file: ${providerFileId}`, cleanupError);
     }
 
     if (error instanceof AppError) throw error;
-    console.error('File Upload Error:', error);
+    console.error('File Database Insert Error:', error);
     throw new AppError('Internal Server Error', 500);
   }
 };
@@ -67,17 +80,14 @@ export const getUserFileMetadata = async (fileId: string, userId: string) => {
 export const deleteUserFile = async (fileId: string, userId: string) => {
   // 1. Retrieve metadata securely enforcing ownership
   const file = await getUserFileMetadata(fileId, userId);
+  
+  const provider = getStorageProvider();
 
-  // 2. Delete the physical file
-  try {
-    await fs.unlink(file.storage_path);
-  } catch (error: any) {
-    // If the physical file is already gone, that's fine, proceed to cleanup DB
-    if (error.code !== 'ENOENT') {
-      console.error(`Filesystem delete error for ${file.storage_path}:`, error);
-      throw new AppError('Internal Server Error', 500);
-    }
-  }
+  // The provider ID is stored in appwrite_file_id or storage_path (for local)
+  const providerFileId = file.appwrite_file_id || file.storage_path;
+
+  // 2. Delete the physical file from storage provider
+  await provider.deleteFile(providerFileId);
 
   // 3. Delete metadata
   await db.query(`DELETE FROM files WHERE id = $1 AND user_id = $2`, [fileId, userId]);
