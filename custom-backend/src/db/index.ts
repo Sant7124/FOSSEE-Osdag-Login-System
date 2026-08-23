@@ -12,13 +12,15 @@ export const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  max: 10,
-  idleTimeoutMillis: 30000,
+  max: process.env.NODE_ENV === 'test' ? 2 : 10,
+  idleTimeoutMillis: process.env.NODE_ENV === 'test' ? 1000 : 30000,
   connectionTimeoutMillis: 5000,
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle database client', err);
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Unexpected error on idle database client', err);
+  }
 });
 
 export const db = {
