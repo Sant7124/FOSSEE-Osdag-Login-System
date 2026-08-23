@@ -4,10 +4,10 @@ import { api } from '../services/api';
 
 interface FileMetadata {
   id: string;
-  original_name: string;
-  mime_type: string;
-  size_bytes: number;
-  created_at: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
 }
 
 const Dashboard = () => {
@@ -77,9 +77,7 @@ const Dashboard = () => {
     formData.append('file', selectedFile);
 
     try {
-      await api.post('/files', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post('/files', formData);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       fetchFiles(); // Refresh list after upload
@@ -225,16 +223,16 @@ const Dashboard = () => {
                 <tbody>
                   {files.map((file) => (
                     <tr key={file.id}>
-                      <td>{file.original_name}</td>
-                      <td>{file.mime_type.split('/')[1] || file.mime_type}</td>
-                      <td>{formatSize(file.size_bytes)}</td>
-                      <td>{new Date(file.created_at).toLocaleDateString()}</td>
+                      <td>{file.originalName}</td>
+                      <td>{file.mimeType ? file.mimeType.split('/')[1] || file.mimeType : 'Unknown'}</td>
+                      <td>{formatSize(file.size)}</td>
+                      <td>{new Date(file.createdAt).toLocaleDateString()}</td>
                       <td>
                         <div className="file-actions">
                           <button 
                             className="action-btn" 
                             title="Download" 
-                            onClick={() => handleDownload(file.id, file.original_name)}
+                            onClick={() => handleDownload(file.id, file.originalName)}
                           >
                             ⬇️
                           </button>
