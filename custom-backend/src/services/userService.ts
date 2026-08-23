@@ -34,3 +34,27 @@ export const registerUser = async (input: RegisterInput) => {
     throw new AppError('Internal Server Error', 500);
   }
 };
+
+export const getUserProfileById = async (userId: string) => {
+  try {
+    const result = await db.query(
+      `SELECT id, name, email, created_at as "createdAt", updated_at as "updatedAt"
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    );
+
+    const user = result.rows[0];
+    
+    if (!user) {
+      // In the rare event the session references a deleted user
+      throw new AppError('User not found or session invalid', 401);
+    }
+
+    return user;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    console.error('Database Error in getUserProfileById:', error);
+    throw new AppError('Internal Server Error', 500);
+  }
+};
