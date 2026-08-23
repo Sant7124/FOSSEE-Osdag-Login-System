@@ -26,3 +26,8 @@ A user must only be able to access files and profile information that belong dir
 - **Cookie Security**: The session token is transmitted exclusively via an `HttpOnly`, `SameSite=Lax` secure cookie. It is never exposed to frontend JavaScript.
 - **Expiration and Revocation**: Sessions have an absolute hard expiry (7 days) in `expires_at`. Logout explicitly sets `revoked_at`, guaranteeing the session is permanently dead even if the cookie is intercepted.
 - **Account Enumeration**: Login failures (wrong password vs unknown email) return the exact same generic error message (`Invalid email or password`) to prevent enumeration attacks.
+
+## Identity Isolation
+- **Authentication vs Identity**: Authentication proves "who are you" via session. The endpoint `/api/me` strictly fetches information corresponding to the authenticated identity.
+- **Zero Trust**: Client-supplied user identifiers (like `req.body.userId`, query parameters, or fake custom headers) are inherently untrusted and explicitly ignored.
+- **Absolute Isolation**: Authenticated User A can NEVER select or query User B's profile via `/api/me` because the query strictly enforces `WHERE id = $1`, where `$1` is guaranteed to be `req.user.id` from the secure session context.
